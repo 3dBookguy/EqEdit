@@ -18,7 +18,6 @@ namespace Math{
 	};
 
 	struct EquationString{
-		int numStrings;
 		WCHAR s;
 		int type;
 		int subType;
@@ -27,12 +26,14 @@ namespace Math{
 	};
 
 	class Eq_Edit{
-	public:
-
+	public: 
+		Eq_Edit();
+		~Eq_Edit();
 		void init_DirectWrite(HWND handle);
 		void loadGlyphs();
+		void displayIconicEquations();
 		void displayGlyphs();
-		void getGlyphMerics();
+		float getGlyphMetrics(WCHAR glyph);
 
 		HRESULT CreateDeviceResources();
 		void DiscardDeviceResources();
@@ -40,13 +41,20 @@ namespace Math{
 		void keyDown(WPARAM wParam);
 		void wmChar(WPARAM wParam);
 		void wmSetFocus();
-//		void wmSize(WPARAM wParam);
+		
 		void wmSize( int w, int h);
 		void lButtonDown(WPARAM wParam, LPARAM lParam);
+		void mouseMove(WPARAM wParam, LPARAM lParam);
 		void lButtonUp(WPARAM wParam, LPARAM lParam);
+		void readTheDrag();
+		void cutTheDrag();
+		void pasteTheDrag();
+		int glyphSelection();
 		void setEqStringMetrics(WCHAR glyph);
 		void deleteGlyph();
-		int countEqStrings( std::wstring eQ );
+
+		void copyToClipboard();
+		int  countEqStrings( std::wstring eQ );
 		void parseEqStrings( std::wstring s, int type, int subType);
 
 	private:
@@ -60,11 +68,29 @@ namespace Math{
 		IDWriteFactory* pDWriteFactory_;
 		IDWriteTextFormat* pMathFormat_;
 		IDWriteTextLayout* pMathLayout_;
+
+		IDWriteTextFormat* pSubSupFormat_;
+		IDWriteTextLayout* pSubSupLayout_;
+
 		ID2D1SolidColorBrush* pMathBrush_;
 		ID2D1SolidColorBrush* pPaperBrush_;
 
 //		std::wstring glyph;
 		std::vector<EquationString> S{};
+		std::vector<EquationString> D{};
+
+		EquationString baseSup{};
+		std::vector<EquationString> base{};
+		EquationString baseSub{};
+
+		EquationString numDenSup{};
+		EquationString numDen{};
+		EquationString numDenSub{};
+
+		EquationString denNumSup{};
+		EquationString denNum{};
+		EquationString denNumSub{};
+
 		int charCount{};
 
 		float fontSize;
@@ -84,8 +110,18 @@ namespace Math{
 		RECT modelRect{};
 		RECT equationRect{};
 		RECT currentLevel{};
-		float insertionPoint{};
 
+//  Caret 
+		bool dragging;
+		bool dragBar;
+		int dragLength;
+		int dragStart;
+		float X;
+		float insertionPoint{};
+		int indexLeft{};
+
+
+// glyph box
 		float cellWidth{};
 		float cellHeight{}; 
 
@@ -95,14 +131,14 @@ namespace Math{
 		int level[13]{};
 		//int currentLevel{};
 		int groundLevel{};
-		float lineEnd{};
-		int nCaretPosX = 0; // horizontal position of caret 
-		int nCaretPosY = 0; // vertical position of caret 
-		int nCharWidth = 0; // width of a character 
-		ABC charWidth;
-		int cch = 0;        // characters in buffer 
-		int nCurChar = 0;   // index of current character 
-		int indexLeft{};
+//		float lineEnd{};
+//		int nCaretPosX = 0; // horizontal position of caret 
+//		int nCaretPosY = 0; // vertical position of caret 
+//		int nCharWidth = 0; // width of a character 
+//		ABC charWidth;
+//		int cch = 0;        // characters in buffer 
+//		int nCurChar = 0;   // index of current character 
+
 		TEXTMETRIC tm;             // structure for text metrics 
 
 

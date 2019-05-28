@@ -149,21 +149,27 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Log.h" />
+    <ClInclude Include="logResource.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
+    <ClInclude Include="wcharUtil.h" />
     <ClInclude Include="WindowsProject2.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Log.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="wcharUtil.cpp" />
     <ClCompile Include="WindowsProject2.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ResourceCompile Include="log.rc" />
     <ResourceCompile Include="WindowsProject2.rc" />
   </ItemGroup>
   <ItemGroup>
@@ -171,7 +177,9 @@
     <Image Include="WindowsProject2.ico" />
   </ItemGroup>
   <ItemGroup>
+    <Text Include="flowChart.txt" />
     <Text Include="Log.txt" />
+    <Text Include="notes.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

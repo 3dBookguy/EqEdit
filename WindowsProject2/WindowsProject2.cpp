@@ -3,19 +3,19 @@
 
 #include "stdafx.h"
 #include "Windowsx.h" // for GET_X_LPARAM
-
+#include "Log.h"
 
 // wingdi.h (include Windows.h)  GetCharWidth32
 #include "WindowsProject2.h"
 
 
 #define MAX_LOADSTRING 100
-
+#define DEBUG_GB
 // Global Variables:
 HINSTANCE hInst;                                // current instance
 WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
 WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
-
+ 
 // Forward declarations of functions included in this code module:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
@@ -30,6 +30,36 @@ template <class T> inline void SafeRelease(T **ppT)
     if (*ppT) {  (*ppT)->Release();  *ppT = NULL; }
 }
 
+Math::Eq_Edit::Eq_Edit():
+	dragging(false),
+	dragBar(false),
+    pageMargin(50.0f),
+    dragStart(0),
+	pD2DFactory_(NULL),
+    pRT_(NULL),
+    pMathBrush_(NULL),
+    pPaperBrush_(NULL),
+    pDWriteFactory_(NULL),
+    pMathFormat_(NULL),
+    pMathLayout_(NULL),
+    pSubSupFormat_(NULL),
+    pSubSupLayout_(NULL)
+{}
+
+Math::Eq_Edit::~Eq_Edit(){
+    SafeRelease(&pD2DFactory_);
+    SafeRelease(&pRT_);
+    SafeRelease(&pMathBrush_);
+    SafeRelease(&pPaperBrush_);
+    SafeRelease(&pDWriteFactory_);
+    SafeRelease(&pMathFormat_);
+    SafeRelease(&pMathLayout_);
+    SafeRelease(&pSubSupFormat_);
+    SafeRelease(&pSubSupLayout_);
+
+
+}
+
 Math::Eq_Edit editor;
 
 
@@ -38,6 +68,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_ LPWSTR    lpCmdLine,
                      _In_ int       nCmdShow)
 {
+
+	Win::logMode(Win::LOG_MODE_BOTH);
+	Win::log(" in wWinMain");
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
 
@@ -125,7 +158,6 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 
    ShowWindow(hWnd, nCmdShow);
-   ShowCaret(hWnd);
    UpdateWindow(hWnd);
 
    return TRUE;
@@ -154,7 +186,7 @@ void Math::Eq_Edit::loadGlyphs(){
 	}
 
 // fill out the top row == 0 25 - 49
-	glyphs[2][0] =  8722; // 2212 minus sign
+	glyphs[2][0] =   L'\u2212'; //8722; // 2212 minus sign
 	glyphs[2][1] =  0177; // 00b1 plus minus sign
 	glyphs[2][2] =  8723; // 2213 minus plus sign
 	glyphs[2][3] =  8721; // 2211 summation
@@ -183,16 +215,111 @@ void Math::Eq_Edit::loadGlyphs(){
 	glyphs[2][23] =  8721; // 2211 summation.
 	glyphs[2][24] =  8804; // 2264 L.E.
 
-
-
-	glyphs[3][0] =  2981; // 304 comb macron.
-	glyphs[3][1] =  27E8; // 305 comb overline
+	glyphs[3][0] =  L'\u0332'; // // 304 comb macron.
+	glyphs[3][1] =  L'\u0305'; //27E8; // 305 comb overline
 	glyphs[3][2] =  27E9; // 2202 partial diff
-	glyphs[3][3] =  2207; // 2207 nabla
+	glyphs[3][3] =  L'\u035f'; // 2207 nabla
 	glyphs[3][4] =  0305; // 220f n-Nary product
-	glyphs[3][5] =  0303; // 2211 summation.
+	glyphs[3][5] =  L'\u0303'; // 2211 summation.
 	glyphs[3][6] =  0302; // 2264 L.E.
-	
+//	L'\u222b';
+	glyphs[3][7] =  L'\u222b';
+
+	glyphs[3][8] =  L'\u0300'; // 2207 nabla
+	glyphs[3][9] =  L'\u0301'; // 220f n-Nary product
+	glyphs[3][10] =  L'\u0302'; // 2211 summation.
+	glyphs[3][11] =  L'\u0304'; // 2264 L.E.
+	glyphs[3][12] =  L'\u00a8'; // 2207 nabla
+	glyphs[3][13] =  L'\u005f'; // 220f n-Nary product
+	glyphs[3][14] =  L'\u00af'; // 2211 summation.
+	glyphs[3][15] =  L'\u02c6'; // 2264 L.E.
+
+
+	glyphs[3][16] =  L'\u02d6'; // 2207 nabla
+	glyphs[3][17] =  L'\u02d7'; // 220f n-Nary product
+	glyphs[3][18] =  L'\u02d9'; // 2211 summation.
+	glyphs[3][19] =  L'\u2202'; // 2264 L.E.
+	glyphs[3][20] =  L'\u22c5'; // 2207 nabla
+	glyphs[3][21] =  L'\u2a2f'; // 220f n-Nary product
+	glyphs[3][22] =  L'\u00b2'; // 2211 summation.
+	glyphs[3][23] =  L'\u2500'; // box drawing horiz.
+	glyphs[3][23] =  L'\u0308'; // comb. diaeresis
+	glyphs[3][24] =  L'\u0307'; // comb. dot above
+
+	glyphs[4][0] =  L'\u2015'; // horiz. bar
+	glyphs[4][1] =  L'\u2014'; // Em dash
+	glyphs[4][2] =  L'\u2010'; // hyphen
+	glyphs[4][3] =  L'\u2011'; // non-breaking hyphen
+	glyphs[4][4] =  L'\u2012'; // figure dash
+	glyphs[4][5] =  L'\u23af'; // horiz. line extension.
+	glyphs[4][6] =  0302; // 2264 L.E.
+//	L'\u222b';
+	glyphs[4][7] =  L'\u222b';
+
+	glyphs[4][8] =  L'\u0300'; // 2207 nabla
+	glyphs[4][9] =  L'\u0301'; // 220f n-Nary product
+	glyphs[4][10] =  L'\u0302'; // 2211 summation.
+	glyphs[4][11] =  L'\u0304'; // 2264 L.E.
+	glyphs[4][12] =  L'\u00a8'; // 2207 nabla
+	glyphs[4][13] =  L'\u005f'; // 220f n-Nary product
+	glyphs[4][14] =  L'\u00af'; // 2211 summation.
+	glyphs[4][15] =  L'\u02c6'; // 2264 L.E.
+
+
+	glyphs[4][16] =  L'\u02d6'; // 2207 nabla
+	glyphs[4][17] =  L'\u02d7'; // 220f n-Nary product
+	glyphs[4][18] =  L'\u02d9'; // 2211 summation.
+	glyphs[4][19] =  L'\u2202'; // 2264 L.E.
+	glyphs[4][20] =  L'\u22c5'; // 2207 nabla
+	glyphs[4][21] =  L'\u2a2f'; // 220f n-Nary product
+	glyphs[4][22] =  L'\u00b2'; // 2211 summation.
+	glyphs[4][23] =  L' '; // 2264 L.E.
+	glyphs[4][23] =  L'\u0308'; // comb. diaeresis
+	glyphs[4][24] =  L'\u0307'; // comb. dot above
+
+	base.resize(25);
+	base[0].s = L'A';
+	base[1].s = L'h';
+	base[2].s = L'a';
+	base[3].s = L'+';
+	base[4].s = L'\u23af';
+	base[5].s = L'\u23af';
+	base[6].s = L' ';
+	base[7].s = L' ';
+	base[8].s = L' ';
+	base[9].s = L'\u2212';
+	base[10].s = L' ';
+	base[11].s = L'\u23af';
+	base[12].s = L'\u23af';
+	base[13].s = L'\u23af';
+	base[14].s = L'\u23af';
+	base[15].s = L'\u23af';
+	base[16].s = L'\u23af';
+	base[17].s = L'\u23af';
+	base[18].s = L'\u23af';
+	base[19].s = L' ';
+	base[20].s = L' ';
+	base[21].s = L' ';
+	base[22].s = L' ';
+	base[23].s = L' ';
+	base[24].s = L'.';
+
+	baseSub.s = L't';
+	baseSup.s = L's';
+	//base[25]{L'c', L' ', L' ', L'+',L' ',
+	//	           L' ',L'\u23af', L'\u23af', L'\u23af', L'\u23af',
+	//	           L'\u23af', L'\u23af', L' ', L' ', L'\u2212',
+	//	           L' ', L' ', L'\u23af', L'\u23af', L'\u23af',
+	//	           L'\u23af', L'\u23af', L'\u23af', L'\u23af', L'\u23af'};
+
+	numDenSup.s = L'2';
+	numDen.s = L'b';
+	numDenSub.s = L'1';
+	denNumSup.s = L'3';
+	denNum.s = L'G';
+	denNumSub.s = L'y';
+
+
 }
 void Math::Eq_Edit::init_DirectWrite(HWND hWnd){
 
@@ -202,29 +329,28 @@ void Math::Eq_Edit::init_DirectWrite(HWND hWnd){
 	GetTextMetrics(hdc, &tm); 
 	ReleaseDC(hWnd, hdc);
 
-	charCount = 0;
 
-	fontSize = 28.0f;
+
+	fontSize = 32.0f;
 	level[7] = fontSize/2.0f;
 	level[6] = 0.0f; 
-	level[5] = -fontSize/2.0f; 
-	lineEnd = pageMargin;
+	level[5] = -fontSize/2.0f;
+
+	charCount = 0;
 	insertionPoint = pageMargin;
 	indexLeft = -1;
-
-	CreateCaret(hWnd, NULL, 0, fontSize);
 
 	loadGlyphs();
 
 	HRESULT hr = D2D1CreateFactory( D2D1_FACTORY_TYPE_SINGLE_THREADED, &pD2DFactory_ );
 	
-	UINT DpI(0);
+//	UINT DpI(0);
 	float dpiScaleX_;
 	float dpiScaleY_;
 
 	if (SUCCEEDED(hr)){
 		pD2DFactory_->GetDesktopDpi(&dpiScaleX_, &dpiScaleY_);	
-		DpI = GetDpiForWindow(hWnd);
+//		DpI = GetDpiForWindow(hWnd);
 		dpiScaleX_ = 96/dpiScaleX_;
 		dpiScaleY_ = 96/dpiScaleY_;
 	}
@@ -239,6 +365,26 @@ void Math::Eq_Edit::init_DirectWrite(HWND hWnd){
 
 	if (SUCCEEDED(hr)){ 
 		hr = pDWriteFactory_->CreateTextFormat( 
+			L"Cambria Math",
+			NULL, 
+			DWRITE_FONT_WEIGHT_SEMI_LIGHT,
+		//	DWRITE_FONT_WEIGHT_NORMAL,
+		//	DWRITE_FONT_STYLE_NORMAL,
+			DWRITE_FONT_STYLE_ITALIC,
+
+			DWRITE_FONT_STRETCH_NORMAL,
+			fontSize,// font size
+			L"en-us",
+			&pMathFormat_);
+
+		pMathFormat_->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_JUSTIFIED);
+		pMathFormat_->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
+		pMathFormat_->SetIncrementalTabStop(50.0f);
+	}
+
+
+	if (SUCCEEDED(hr)){ 
+		hr = pDWriteFactory_->CreateTextFormat( 
 			// L"Arial",
 			//L"Cambria Math",
 			L"Cambria Math",
@@ -247,9 +393,9 @@ void Math::Eq_Edit::init_DirectWrite(HWND hWnd){
 		//	DWRITE_FONT_WEIGHT_NORMAL,
 			DWRITE_FONT_STYLE_NORMAL,
 			DWRITE_FONT_STRETCH_NORMAL,
-			fontSize,// font size
+			0.7f*fontSize,// font size
 			L"en-us",
-			&pMathFormat_);
+			&pSubSupFormat_);
 
 		pMathFormat_->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_JUSTIFIED);
 		pMathFormat_->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
@@ -298,7 +444,7 @@ void Math::Eq_Edit::init_DirectWrite(HWND hWnd){
 
 void Math::Eq_Edit::displayGlyphs(){
 
-	D2D1_POINT_2F glyphOrigin {0.0f};
+	D2D1_POINT_2F glyphOrigin{0.0f};
 
 	for( int row = 0; row < 10; row++ ){
 		for( int col = 0; col < 25; col++){
@@ -315,24 +461,162 @@ void Math::Eq_Edit::displayGlyphs(){
 			pRT_->DrawTextLayout( glyphOrigin, pMathLayout_, pMathBrush_ );
 		}
 	}
-
 }
 
+void Math::Eq_Edit::displayIconicEquations(){
 
-void Math::Eq_Edit::getGlyphMerics(){
+	D2D1_POINT_2F modelOrigin{0.0f};
+	modelOrigin.x = modelRect.left + pageMargin;
+	modelOrigin.y = static_cast<float>(modelRect.bottom)/2.0f;
+//	const std::wstring S0 = L"C + \u23af\u23af\u23af  \u2212  \u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af";
+	//for( int i = 0; i < dragLength; i++ ){
+	//	if( i == 0 ) D[i].x = modelRect.left + pageMargin + D[i].w;
+	//	else D[i].x = D[i-1].x + D[i].w;
+	//	pDWriteFactory_->CreateTextLayout(
+	//		&D[i].s,
+	//		1,			
+	//		pMathFormat_,
+	//		450.0f, // width of layout box
+	//		100.0f,  // height of layout box
+	//		&pMathLayout_ );
+	//	// Handle the space bar
+	//	modelOrigin.x  = D[i].x - D[i].w;
+	//	pRT_->DrawTextLayout(modelOrigin , pMathLayout_, pMathBrush_ );
+
+	//}
+
+////	WCHAR base[25]{L'c', L' ', L' ', L'+',L' ',
+//		           L' ',L'\u23af', L'\u23af', L'\u23af', L'\u23af',
+//		           L'\u23af', L'\u23af', L' ', L' ', L'\u2212',
+//		           L' ', L' ', L'\u23af', L'\u23af', L'\u23af',
+//		           L'\u23af', L'\u23af', L'\u23af', L'\u23af', L'\u23af'};
+
+  // origin.x = S[i].x - S[i].w; so S[i].x  is the right most extent of the glyph
+
+// Draw the base run
+
+	D2D1_POINT_2F baseOrigin = modelOrigin;
+
+	for( int i = 0; i < 25; i++ ){
+		base[i].w = getGlyphMetrics(base[i].s);
+		if( base[i].w == 0.0f ) base[i].w = 16.0f;		
+//		Win::log("getGlyphMetrics(glyph) width = %f", width);
+		base[i].x = baseOrigin.x + base[i].w;
+		pRT_->DrawTextLayout(baseOrigin , pMathLayout_, pMathBrush_ );
+		baseOrigin.x += base[i].w;
+	}
+
+	D2D1_RECT_F baseRect{}; 
+	baseRect.left = modelRect.left;
+	baseRect.top = modelOrigin.y;
+	baseRect.right = base[0].x;
+	baseRect.bottom = baseRect.top + fontSize;
+
+	D2D1_POINT_2F baseLine0{ modelOrigin.x, modelOrigin.y + 0.48f*fontSize};
+	D2D1_POINT_2F baseLine1{ base[0].x + 3.0f*fontSize, modelOrigin.y+ 0.48f*fontSize};
+
+	pRT_->DrawRectangle( &baseRect, pMathBrush_, 0.5f, NULL );
+
+	pRT_->DrawLine( baseLine0, baseLine1, pMathBrush_, 0.5f, NULL );
+
+
+// Draw baseSup
+	float supOf = -2.0f;
+	D2D1_POINT_2F baseSupOrigin{};
+	DWRITE_TEXT_RANGE supRange{};
+	supRange.startPosition = 0; supRange.length = 1;
+	baseSupOrigin.y = modelOrigin.y + supOf;
+	baseSupOrigin.x =  base[0].x + 3.0f;
+	baseSup.w = getGlyphMetrics(baseSup.s);
+	pMathLayout_->SetFontSize(18.0f, supRange);
+
+	pRT_->DrawTextLayout(baseSupOrigin , pMathLayout_, pMathBrush_ );
+
+	D2D1_RECT_F baseSupRect{}; 
+	baseSupRect.left = baseRect.right;
+	baseSupRect.top = baseRect.top - fontSize;
+	baseSupRect.right = baseSupRect.left + fontSize;;
+	baseSupRect.bottom = baseRect.top + 0.67f*fontSize;
+
+	pRT_->DrawRectangle( &baseSupRect, pMathBrush_, 0.5f, NULL );
+
+// Draw baseSub
+	float subOf = 23.0f;
+	D2D1_POINT_2F baseSubOrigin{};
+	DWRITE_TEXT_RANGE subRange{};
+	subRange.startPosition = 0; subRange.length = 1;
+	baseSubOrigin.y = modelOrigin.y + subOf;
+	baseSubOrigin.x =  base[0].x + 3.0f;
+	baseSub.w = getGlyphMetrics(baseSub.s);
+	pMathLayout_->SetFontSize(18.0f, subRange);
+
+	pRT_->DrawTextLayout(baseSubOrigin , pMathLayout_, pMathBrush_ );
+
+	D2D1_RECT_F baseSubRect{}; 
+	baseSubRect.left = baseRect.right;
+	baseSubRect.top = baseSupRect.bottom;
+	baseSubRect.right = baseSupRect.left + fontSize;;
+	baseSubRect.bottom = baseRect.bottom + fontSize;
+
+	pRT_->DrawRectangle( &baseSubRect, pMathBrush_, 0.5f, NULL );
+
+
+
+// Draw numDen
+	float numDenOf = -23.0f;
+	D2D1_POINT_2F numDenOrigin{};
+	DWRITE_TEXT_RANGE numDenRange{};
+	numDenRange.startPosition = 0; numDenRange.length = 1;
+	numDenOrigin.y = modelOrigin.y + numDenOf;
+	numDenOrigin.x =  base[3].x;
+	numDen.w = getGlyphMetrics(numDen.s);
+	pRT_->DrawTextLayout(numDenOrigin , pMathLayout_, pMathBrush_ );
+
+// Draw numDenSup
+	float numDenSupOf = -28.0f;
+	D2D1_POINT_2F numDenSupOrigin{};
+	DWRITE_TEXT_RANGE numDenSupRange{};
+	numDenSupRange.startPosition = 0; numDenSupRange.length = 1;
+	numDenSupOrigin.y = numDenOrigin.y + supOf;
+	numDenSupOrigin.x =  base[4].x;
+	numDenSup.w = getGlyphMetrics(numDenSup.s);
+	pMathLayout_->SetFontSize(18.0f, numDenSupRange);
+
+	pRT_->DrawTextLayout(numDenSupOrigin , pMathLayout_, pMathBrush_ );
+
+// Draw numDenSup
+	float numDenSubOf = 21.0f;
+	D2D1_POINT_2F numDenSubOrigin{};
+	DWRITE_TEXT_RANGE numDenSubRange{};
+	numDenSubRange.startPosition = 0; numDenSubRange.length = 1;
+	numDenSubOrigin.y = numDenOrigin.y + subOf;
+	numDenSubOrigin.x =  base[4].x;
+	numDenSub.w = getGlyphMetrics(numDenSub.s);
+	pMathLayout_->SetFontSize(18.0f, numDenSubRange);
+
+	pRT_->DrawTextLayout(numDenSubOrigin , pMathLayout_, pMathBrush_ );
+
+
+//////////////////
+   
+
+
+}
+float Math::Eq_Edit::getGlyphMetrics(WCHAR glyph){
  
    SafeRelease(&pMathLayout_);
    pDWriteFactory_->CreateTextLayout(
       &glyph,
       1,			
       pMathFormat_,
-      10.0f, // width of layout box
-      10.0f,  // height of layout box
+      100.0f, // width of layout box
+      100.0f,  // height of layout box
       &pMathLayout_ );
 
    DWRITE_TEXT_METRICS metrics;
    pMathLayout_->GetMetrics( &metrics);
-   glyphWidth = metrics.width;
+//   glyphWidth = metrics.width;
+   return  metrics.width;
 }
 
 void Math::Eq_Edit::draw_Eq(){
@@ -351,10 +635,9 @@ void Math::Eq_Edit::draw_Eq(){
 
 		pRT_->FillRectangle(&paperRect, pPaperBrush_);
 		SafeRelease(&pMathLayout_);
-
 		displayGlyphs();
-
-		HideCaret(handle); 
+		SafeRelease(&pMathLayout_);
+		displayIconicEquations();
 		SafeRelease(&pMathLayout_);
 
 		origin.x = pageMargin;
@@ -373,39 +656,65 @@ void Math::Eq_Edit::draw_Eq(){
 
 		}
 		SetCaretPos(insertionPoint, currentLevel.top ); 
-		ShowCaret(handle);
 
 
 // Diagnostics paperRect.bottom
-DWRITE_TEXT_METRICS metrics;
-float glyphWidth;
+		DWRITE_TEXT_METRICS metrics;
+		float glyphWidth;
 		SafeRelease(&pMathLayout_);
 		std::wstring diagnostic{};
 		std::wstring f_number{};
 		f_number.clear();
-		f_number = L"equationRect.bottom =  ";
-		f_number.append( std::to_wstring( equationRect.bottom ));
-		f_number.append( L"   groundLevel = ");
-		f_number.append( std::to_wstring( groundLevel ));
-		float f_debug{};
+		f_number = L"indexLeft =  ";
+		f_number.append( std::to_wstring( indexLeft ));
+		f_number.append( L"   charCount = ");
+		f_number.append( std::to_wstring( charCount ));
+		f_number.append( L"   insertionPoint = ");
+		f_number.append( std::to_wstring( insertionPoint ));
+		if( indexLeft >= 0 ){
+		f_number.append( L"   glyph =");
+		f_number.append( std::to_wstring( glyph));
 
-			origin.x = 0.0f;
-			origin.y = static_cast<float>(equationRect.bottom) - 35.0f;
-			diagnostic = L"Hello";
-			pDWriteFactory_->CreateTextLayout(
-				(PWSTR)f_number.c_str(),
-				(UINT32)lstrlen((PWSTR)f_number.c_str()),			
-				pMathFormat_,
-				paperRect.right, // width of layout box
-				100.0f,  // height of layout box
-				&pMathLayout_ );
+		//f_number.append( L"   S[indexLeft].x =");
+		//f_number.append( std::to_wstring( S[indexLeft].x));
+		f_number.append( L"   S[indexLeft].w =");
+		f_number.append( std::to_wstring( S[indexLeft].w));}
 
+	//	float f_debug{};
+		origin.x = 0.0f;
+		origin.y = static_cast<float>(equationRect.bottom) - 35.0f;
+	//	diagnostic = L"Hello";
+		pDWriteFactory_->CreateTextLayout(
+			(PWSTR)f_number.c_str(),
+			(UINT32)lstrlen((PWSTR)f_number.c_str()),			
+			pMathFormat_,
+			paperRect.right, // width of layout box
+			100.0f,  // height of layout box
+			&pMathLayout_ );
 
+		pRT_->DrawTextLayout( origin , pMathLayout_, pMathBrush_ );
 
-			pRT_->DrawTextLayout( origin , pMathLayout_, pMathBrush_ );
+//  Draw the Drag Bar
 
+		D2D1_POINT_2F point0;
+		D2D1_POINT_2F point1;
 
-		if (D2DERR_RECREATE_TARGET == pRT_->EndDraw()) DiscardDeviceResources();
+		point0.x = insertionPoint; 
+		point0.y = point1.y = currentLevel.top;
+
+		if( dragging ){
+
+			if( dragStart >= 0 && charCount > 0)
+				point1.x = S[dragStart].x;
+			else point1.x = pageMargin;
+				
+			pRT_->DrawLine( point0, point1,
+				pMathBrush_,
+				1.0f,
+				NULL );
+		}
+
+	if (D2DERR_RECREATE_TARGET == pRT_->EndDraw()) DiscardDeviceResources();
 	} //End if (SUCCEEDED( CreateDeviceResources())
 	return;
 }
@@ -425,9 +734,6 @@ HRESULT Math::Eq_Edit::CreateDeviceResources(){
 		pRT_->CreateSolidColorBrush(D2D1::ColorF(0xF4B480),  &pMathBrush_ );
 //		pRT_->CreateSolidColorBrush(D2D1::ColorF(0x2F4F4F),  &pPaperBrush_ );
 		pRT_->CreateSolidColorBrush(D2D1::ColorF(0x000000),  &pPaperBrush_ );
-
-		
-
 	}
 
 	if( FAILED( hr )) return hr;
@@ -440,16 +746,87 @@ void Math::Eq_Edit::DiscardDeviceResources(){
 	
 	SafeRelease(&pPaperBrush_);
     SafeRelease(&pMathBrush_);
-  	SafeRelease(&pMathLayout_);
     SafeRelease(&pRT_);
 
 }
+void Math::Eq_Edit::wmChar(WPARAM wParam){
+#ifdef DEBUG_GB
+	Win::log(L"in wmChar indexLeft = %i", indexLeft );
+#endif
 
+	  
+    bool heldControl = (GetKeyState(VK_CONTROL) & 0x80) != 0;
+	if (heldControl) return;
+	switch (wParam) 
+    { 
+		case 0x08:  // backspace
+			if( charCount == 0 || indexLeft == -1 ) MessageBeep((UINT) -1);
+			else{
+				deleteGlyph();
+			    InvalidateRect(handle, NULL, FALSE);
+			}
+			break;
+		//case 'C':
+		//	Win::log(L"wmChar case 'C' indexLeft = %i", indexLeft );
+		//	if (heldControl) break;
+  //         // copyToClipboard();
+		//case 'X':
+		//	Win::log(L"wmChar case 'X' indexLeft = %i", indexLeft );
+		//	if (heldControl){
+		//		Win::log(L"wmChar case 'X' if (heldControl) = TRUE" );
+		//		break;
+		//	}
+
+		case 0x0A:  // linefeed 
+			break;
+		case 0x1B:  // escape 
+			MessageBeep((UINT) -1); 
+			return; 
+		case 0x09:  // tab 
+			// Convert tabs to four consecutive spaces. 
+			//for (i = 0; i < 4; i++) 
+			//	SendMessage(hwndMain, WM_CHAR, 0x20, 0); 
+			//return 0; 
+			break;
+		case 0x0D:  // carriage return 
+ 
+            // Record the carriage return and position the 
+            // caret at the beginning of the new line.
+
+            //pchInputBuf[cch++] = 0x0D; 
+            //nCaretPosX = 0; 
+            //nCaretPosY += 1; 
+            break;
+
+// displayable character 
+        default:   
+			Win::log(L"in wmChar default CALLING setEqStringMetrics" );
+			setEqStringMetrics( (WCHAR)wParam );
+			InvalidateRect(handle, NULL, FALSE);
+			break; 
+    } 
+}
+
+// Handles caret navigation and special presses that
+// do not generate characters.
 void Math::Eq_Edit::keyDown( WPARAM wParam){
+#ifdef DEBUG_GB
+	Win::log(L"in keyDown linkIndex = %i", indexLeft );
+#endif
+
+    bool heldShift   = (GetKeyState(VK_SHIFT)   & 0x80) != 0;
+    bool heldControl = (GetKeyState(VK_CONTROL) & 0x80) != 0;
 
     switch (wParam) 
     { 
         case VK_LEFT:   // LEFT ARROW 
+
+			//if( charCount == 0 || indexLeft == -1 ) MessageBeep((UINT) -1);
+			//else{
+			//	moveCaret(true);
+			//    InvalidateRect(handle, NULL, FALSE);
+			//}
+			//break;
 
 			if( indexLeft  <= 0 ){
 				insertionPoint = pageMargin;
@@ -457,34 +834,15 @@ void Math::Eq_Edit::keyDown( WPARAM wParam){
 				MessageBeep((UINT) -1);
 				}
 
-
-			else insertionPoint = S[--indexLeft].x;
-
-			HideCaret(handle);
+			else{
+				--indexLeft;
+				insertionPoint = S[indexLeft].x;
+			    
+			}
+	Win::log(L"VK_LEFT linkIndex = %i", indexLeft );
 			SetCaretPos( insertionPoint, currentLevel.top);
-			ShowCaret(handle);
+			InvalidateRect(handle, NULL, FALSE);
  
-            // The caret can move only to the beginning of 
-            // the current line. 
- 
-            //if (nCaretPosX > 0) 
-            //{ 
-            //    HideCaret(hwndMain); 
- 
-            //    // Retrieve the character to the left of 
-            //    // the caret, calculate the character's 
-            //    // width, then subtract the width from the 
-            //    // current horizontal position of the caret 
-            //    // to obtain the new position. 
- 
-            //    ch = pchInputBuf[--nCurChar]; 
-            //    hdc = GetDC(hwndMain); 
-            //    GetCharWidth32(hdc, ch, ch, &nCharWidth); 
-            //    ReleaseDC(hwndMain, hdc); 
-            //    nCaretPosX = max(nCaretPosX - nCharWidth, 
-            //        0); 
-            //    ShowCaret(hwndMain); 
-            //} 
             break; 
  
         case VK_RIGHT:  // RIGHT ARROW 
@@ -493,69 +851,31 @@ void Math::Eq_Edit::keyDown( WPARAM wParam){
 				MessageBeep((UINT) -1 );
 				break;}
 
-
 			insertionPoint = S[++indexLeft].x;
-			HideCaret(handle);
 			SetCaretPos( insertionPoint, currentLevel.top);
-			ShowCaret(handle);
-
+	Win::log(L"VK_RIGHT linkIndex = %i", indexLeft );
  
-            // Caret moves to the right or, when a carriage 
-            // return is encountered, to the beginning of 
-            // the next line. 
- 
-            //if (nCurChar < cch) 
-            //{ 
-            //    HideCaret(hwndMain); 
- 
-            //    // Retrieve the character to the right of 
-            //    // the caret. If it's a carriage return, 
-            //    // position the caret at the beginning of 
-            //    // the next line. 
- 
-            //    ch = pchInputBuf[nCurChar]; 
-            //    if (ch == 0x0D) 
-            //    { 
-            //        nCaretPosX = 0; 
-            //        nCaretPosY++; 
-            //    } 
- 
-            //    // If the character isn't a carriage 
-            //    // return, check to see whether the SHIFT 
-            //    // key is down. If it is, invert the text 
-            //    // colors and output the character. 
- 
-            //    else 
-            //    { 
-            //        hdc = GetDC(hwndMain); 
-            //        nVirtKey = GetKeyState(VK_SHIFT); 
-            //        if (nVirtKey & SHIFTED) 
-            //        { 
-            //            crPrevText = SetTextColor(hdc, 
-            //                RGB(255, 255, 255)); 
-            //            crPrevBk = SetBkColor(hdc, 
-            //                RGB(0,0,0)); 
-            //            TextOut(hdc, nCaretPosX, 
-            //                nCaretPosY * dwCharY, 
-            //                &ch, 1); 
-            //            SetTextColor(hdc, crPrevText); 
-            //            SetBkColor(hdc, crPrevBk); 
-            //        } 
- 
-            //        // Get the width of the character and 
-            //        // calculate the new horizontal 
-            //        // position of the caret. 
- 
-            //        GetCharWidth32(hdc, ch, ch, &nCharWidth); 
-            //        ReleaseDC(hwndMain, hdc); 
-            //        nCaretPosX = nCaretPosX + nCharWidth; 
-            //    } 
-            //    nCurChar++; 
-            //    ShowCaret(hwndMain); 
-//                break; 
- //           } 
+  
             break; 
- 
+ 		case 'C':
+			Win::log(L"keyDown case 'C' linkIndex = %i", indexLeft );
+			if (heldControl)
+            copyToClipboard();
+			break;
+		case 'X':
+			Win::log(L"keyDown case 'X' linkIndex = %i", indexLeft );
+			if (heldControl)
+			{
+				cutTheDrag();
+			}
+			break;
+		case 'V':
+			Win::log(L"keyDown case 'X' linkIndex = %i", indexLeft );
+			if (heldControl)
+			{
+				pasteTheDrag();
+			}
+			break;
         case VK_UP:     // UP ARROW 
 			break;
         case VK_DOWN:   // DOWN ARROW 
@@ -564,12 +884,9 @@ void Math::Eq_Edit::keyDown( WPARAM wParam){
 			break;
         case VK_HOME:   // HOME 
 
-
 			indexLeft = -1;
 			insertionPoint = pageMargin;
-			HideCaret(handle);
 			SetCaretPos( insertionPoint, currentLevel.top);
-			ShowCaret(handle);
  
             // Set the caret's position to the upper left 
             // corner of the client area. 
@@ -580,15 +897,13 @@ void Math::Eq_Edit::keyDown( WPARAM wParam){
  
         case VK_END:    // END 
 
-			if( indexLeft ==  -1 ){
+			if( indexLeft ==  -1 && charCount == 0){
 				MessageBeep((UINT) -1 );
 				break;}
 
 			indexLeft = charCount-1;
 			insertionPoint = S[indexLeft].x;
-			HideCaret(handle);
 			SetCaretPos( insertionPoint, currentLevel.top);
-			ShowCaret(handle);
 			break;
  
             // Move the caret to the end of the text. 
@@ -637,187 +952,292 @@ void Math::Eq_Edit::keyDown( WPARAM wParam){
             //SetCaretPos(nCaretPosX, nCaretPosY * dwCharY); 
 }
 
-void Math::Eq_Edit::wmChar(WPARAM wParam){
-	switch (wParam) 
-    { 
-		case 0x08:  // backspace
-			if( charCount == 0 || indexLeft == -1 ) MessageBeep((UINT) -1);
-			else{
-				deleteGlyph();
-			    InvalidateRect(handle, NULL, FALSE);
-			}
-			break;
+void Math::Eq_Edit::copyToClipboard(){
 
-		case 0x0A:  // linefeed 
-			break;
-		case 0x1B:  // escape 
-			MessageBeep((UINT) -1); 
-			//return; 
-		case 0x09:  // tab 
-			// Convert tabs to four consecutive spaces. 
-			//for (i = 0; i < 4; i++) 
-			//	SendMessage(hwndMain, WM_CHAR, 0x20, 0); 
-			//return 0; 
-			break;
-		case 0x0D:  // carriage return 
+Win::log(L"copyToClipboard() dragLength = %i", dragLength );
+    if (dragLength == 0)
+        return;
+
+    if (OpenClipboard(handle))
+    {
+        if (EmptyClipboard())
+        {
+            // Allocate room for the text
+         //   size_t byteSize         = sizeof(wchar_t) * (dragLength + 1);
+
+		  size_t byteSize         = sizeof(wchar_t) * (4 + 1);
+
+            HGLOBAL hClipboardData  = GlobalAlloc(GMEM_DDESHARE | GMEM_ZEROINIT, byteSize);
+
+            if (hClipboardData != NULL)
+            {
+                void* memory = GlobalLock(hClipboardData);  // [byteSize] in bytes
+
+                if (memory != NULL)
+                {
+                    // Copy text to memory block.
+					std::wstring hello = L"Hello World";
+					const wchar_t* text = hello.c_str();
  
-            // Record the carriage return and position the 
-            // caret at the beginning of the new line.
+                //    const wchar_t* text = text_.c_str();
+                //   memcpy(memory, &hello_.c_str(), byteSize);
+                  memcpy(memory, &text[0], byteSize);
 
-            //pchInputBuf[cch++] = 0x0D; 
-            //nCaretPosX = 0; 
-            //nCaretPosY += 1; 
-            break;
+            //        memcpy(memory, &text[selectionRange.startPosition], byteSize);
+                    GlobalUnlock(hClipboardData);
 
-// displayable character 
-        default:   
-			
-			setEqStringMetrics( (WCHAR)wParam );
-			InvalidateRect(handle, NULL, FALSE);
-			break; 
-    } 
+                    if (SetClipboardData(CF_UNICODETEXT, hClipboardData) != NULL)
+                    {
+                        hClipboardData = NULL; // system now owns the clipboard, so don't touch it.
+                    }
+                }
+                GlobalFree(hClipboardData); // free if failed
+            }
+        }
+        CloseClipboard();
+    }
 }
 
-void  Math::Eq_Edit::lButtonUp( WPARAM wParam, LPARAM lParam ){
-	int mouse_up_X = GET_X_LPARAM(lParam); 
-	int mouse_up_Y = GET_Y_LPARAM(lParam);
-// Is Mouse in equation level?
-	if(( mouse_up_X > pageMargin  &&    mouse_up_X  <  equationRect.right ) &&
-			( mouse_up_Y > currentLevel.top && mouse_up_Y < currentLevel.top + fontSize )){
+//  Snaps the IP and indexLeft to the left or right side of a glyph.
+int Math::Eq_Edit::glyphSelection(){
 
-		float X = static_cast<float>(mouse_up_X);
-	//	insertionPoint = lineEnd;
-
-	//  Handle the first glyph AS A SPECIAL CASE
-		if( X < S[0].x ){
-			if( X > pageMargin + S[0].w/2.0f){
-				insertionPoint = S[0].x;
-				indexLeft = 0;}
-			else{
-				insertionPoint = pageMargin;
-				indexLeft = -1;}
+	if( X < S[0].x ){
+		if( X > pageMargin + S[0].w/2.0f){
+			insertionPoint = S[0].x;
+			indexLeft = 0;			
 		}
-
-
-		else if( X > S[charCount - 1].x ){
-			insertionPoint = S[charCount - 1].x;
-			indexLeft = charCount - 1;
+		else{ 
+			insertionPoint = pageMargin;
+			indexLeft = -1;
 		}
-		
-
-		else{
-			for( int i = 1; i < charCount; i++ ){
-				float space = (S[ i ].x - S[i-1].x)/2.0f;
-				if( X >= S[i-1].x  &&  X <= S[i-1].x  + space ){
-					insertionPoint = S[i-1].x;
-					indexLeft = i-1;
-					break;
-				}
-				else if( X >= S[i-1].x + space && X <= S[i].x ){
-					insertionPoint = S[i].x;
-					indexLeft = i;
-					break;
-				}
-			}
-		}
-
-//	insertionPoint = static_cast<float>( mouseX );
-	HideCaret(handle);
-	SetCaretPos( insertionPoint, currentLevel.top);
-	ShowCaret(handle);
-	return;
 	}
 
-	InvalidateRect(handle, NULL, FALSE);	
+	else if( X > S[charCount - 1].x ){
+		insertionPoint = S[charCount - 1].x;
+		indexLeft = charCount - 1;
+
+	}		
+	else{
+		for( int i = 1; i < charCount; i++ ){
+			float space = (S[ i ].x - S[i-1].x)/2.0f;
+			if( X >= S[i-1].x  &&  X <= S[i-1].x  + space ){
+				insertionPoint = S[i-1].x;
+				indexLeft = i-1;
+				break;
+			}
+			else if( X >= S[i-1].x + space && X <= S[i].x ){
+				insertionPoint = S[i].x;
+				indexLeft = i;
+				break;
+			}
+		}
+	}
+	Win::log(L"glyphSelection indexLeft = %i", indexLeft );
+	SetCaretPos( insertionPoint, currentLevel.top);
+	InvalidateRect(handle, NULL, FALSE);
+	return indexLeft;
+}
+
+
+
+//  On lButtonUp reads the drag into EquationString D[]. 
+void Math::Eq_Edit::readTheDrag(){
+	Win::log(L"readTheDrag() indexLeft = %i", indexLeft );
+	dragLength = indexLeft - dragStart;
+
+	if( dragLength < 0 ) dragLength  = -dragLength;
+
+	D.clear();
+	D.resize(dragLength);
+
+	std::wstring x;
+
+	if( dragStart < indexLeft ){
+		for( int i = 0; i < dragLength; i++ ){
+			D[i].s =  S[i + dragStart + 1].s;
+			D[i].w =  S[i + dragStart + 1].w;
+			x.clear();
+			x = D[i].s;
+			Win::log( x);
+		} 
+	}
+
+	else{
+		for( int i = 0; i < dragLength; i++ ){
+			D[i].s =  S[i + indexLeft + 1].s;
+			D[i].w =  S[i + indexLeft + 1].w;
+			x.clear();
+			x = D[i].s;
+			Win::log( x);
+		} 
+	}
 
 }
 
-void  Math::Eq_Edit::lButtonDown( WPARAM wParam, LPARAM lParam ){
-	int mouseX = GET_X_LPARAM(lParam); 
-	int mouseY = GET_Y_LPARAM(lParam);
+//  User has entered ctrl-V;  the dragGlyphs are already
+//  in D[ 0 , dragLength - 1 ] after button up.
+//  Reset charCount and S.size(). += dragLength;
+//  Move any glyphs to right of IP.
+//  Paste the dragGlyphs in the hole to right of IP.
+void Math::Eq_Edit::pasteTheDrag(){
 
-// Mouse in glyphBox
+	int number_of_glyphs_to_move = charCount - indexLeft - 1;
 
- 	if(( mouseX > pageMargin && mouseY > pageMargin ) &&
-	  (  mouseX < glyphBox.right && mouseY < glyphBox.bottom )){
+	charCount += dragLength;
+	S.resize(charCount);
+
+//  Make a hole for the dragGlyphs.
+	for( int i = 0; i <  number_of_glyphs_to_move; i++ ){ 
+		S[indexLeft + dragLength + 1 + i].s = S[indexLeft + 1 + i].s;
+		S[indexLeft + dragLength + 1 + i].w = S[indexLeft + 1 + i].w;
+	}
+
+//  Put the dragGlyphs in the hole.
+	for( int i = 0; i < dragLength; i++ ){  
+		S[indexLeft + 1 + i].s = D[i].s;
+		S[indexLeft + 1 + i].w = D[i].w;
+	}
+
+//  Now we can set the glyph.x's from indexLeft + 1 to charCount -1
+	for( int i = indexLeft + 1; i < charCount; i++ ){  
+		 if( i == 0 ){S[i].x = pageMargin + S[i].w;}
+		 else S[i].x = S[i-1].x + S[i].w;
+	}
+
+//  Put the IP at the end of the paste
+	indexLeft += dragLength;
+	insertionPoint = S[indexLeft].x;
+	InvalidateRect(handle, NULL, FALSE);
+}
+
+//  User has entered ctrl-X;  the dragGlyphs are already
+//  in D[ 0 , dragLength - 1 ] after button up.
+//  Remove the dragGlyphs and move the remaing glyphs.
+//  Reset charCount and S.size().
+void Math::Eq_Edit::cutTheDrag(){
+
+//  Assuming a right drag here.
+	int number_of_glyphs_to_move = charCount - indexLeft - 1;
+	int start = dragStart + 1;
+
+//  ? Is it really a right drag ?
+	if( dragStart > indexLeft ){
+		number_of_glyphs_to_move = charCount - dragStart - 1;
+		start = indexLeft + 1;
+	}
+
+//  Move the glyphs.
+	for( int i = 0; i < number_of_glyphs_to_move;  i++ ){
+		S[start + i].s = S[start + i + dragLength].s;
+		S[start + i].w = S[start + i + dragLength].w;
+		if( start + i == 0 ) S[start + i].x = pageMargin + S[start + i].w;
+		else  S[start + i].x = S[start + i -1 ].x + S[start + i].w;
+	}
+
+	charCount -= dragLength;
+	S.resize(charCount);
+
+//  ? Drag right ?
+	if( dragStart < indexLeft ){
+		indexLeft = dragStart;
+		if( dragStart == -1) insertionPoint = pageMargin;
+		else insertionPoint = S[dragStart].x;
+	}
+
+//  Must be a drag left.
+	else{
+		if( indexLeft == -1) insertionPoint = pageMargin;
+		else insertionPoint = S[indexLeft].x;
+	}
+
+	InvalidateRect(handle, NULL, FALSE);
+}
+
+
+void Math::Eq_Edit::lButtonDown( WPARAM wParam, LPARAM lParam ){
+	Win::log(L"in lButtonDown linkIndex = %i", indexLeft );
+	RECT eqLine{};
+	eqLine.left = pageMargin; eqLine.right = equationRect.right;
+	eqLine.top = currentLevel.top; eqLine.bottom = currentLevel.top + fontSize;
+
+	POINT sP;  // sP for start point.
+	GetCursorPos(&sP);
+    ScreenToClient(handle, &sP);
+
+// ? Mouse in glyphBox
+ 	if( PtInRect( &glyphBox, sP )){
 		int row{}; int col{};
-		row = ( mouseY - pageMargin )/cellHeight;
-		col = ( mouseX - pageMargin )/cellWidth;
+		row = ( sP.y - pageMargin )/cellHeight;
+		col = ( sP.x - pageMargin )/cellWidth;
 		if(glyphs[row][col]){
 			glyph = glyphs[row][col];
 			setEqStringMetrics( glyph );
+			InvalidateRect(handle, NULL, FALSE);
 		}
 	}
 
-// Mouse in modelBox	
-	else if (( mouseX > modelRect.left &&  mouseY > pageMargin ) &&
-	       (   mouseX < modelRect.right && mouseY < modelRect.bottom )){
-		int modelX = mouseX;
+// ? Mouse in modelBox
+	else if( PtInRect(&modelRect, sP )){
+		int modelX = sP.x;
 	}
 
-// Is Mouse in equation level?
-	else if(( mouseX > pageMargin  &&     mouseX  <  equationRect.right ) &&
-			( mouseY > currentLevel.top && mouseY < currentLevel.top + fontSize )){
+// Is Mouse in equation level?   
+	else if( PtInRect(&eqLine, sP )){
+		if(charCount == 0 ) return;
+		dragging = true;
+		X = static_cast<float>(sP.x);
 
-		HideCaret(handle);
-		float X = static_cast<float>(mouseX);
-	//	insertionPoint = lineEnd;
-
-	//  Handle the first glyph AS A SPECIAL CASE
-		if( X < S[0].x ){
-			if( X > pageMargin + S[0].w/2.0f){
-				insertionPoint = S[0].x;
-		//		nCurChar = 1;
-				indexLeft = 0;}
-			else{
-				insertionPoint = pageMargin;
-		//		nCurChar = 0;
-				indexLeft = -1;}
-		}
-
-
-		else if( X > S[charCount - 1].x ){
-			insertionPoint = S[charCount - 1].x;
-			indexLeft = charCount - 1;
-		}
-		
-
-		else{
-			for( int i = 1; i < charCount; i++ ){
-				float space = (S[ i ].x - S[i-1].x)/2.0f;
-				if( X >= S[i-1].x  &&  X <= S[i-1].x  + space ){
-					insertionPoint = S[i-1].x;
-			//		nCurChar = i;
-					indexLeft = i-1;
-					break;
-				}
-				else if( X >= S[i-1].x + space && X <= S[i].x ){
-					insertionPoint = S[i].x;
-			//		nCurChar = i+1;
-					indexLeft = i;
-					break;
-				}
-			}
-		}
-
-//	insertionPoint = static_cast<float>( mouseX );
-	// HideCaret(handle);
-	SetCaretPos( insertionPoint, currentLevel.top);
-	ShowCaret(handle);
-	return;
+		// get indexLeft of drag start.
+		dragStart = glyphSelection();
 	}
 
-	InvalidateRect(handle, NULL, FALSE);	
+	Win::log(L"leaving lButtonDown linkIndex = %i", indexLeft );
+
+
+}
+//  Just determines where the cursor is until lButtonUp.
+void Math::Eq_Edit::mouseMove(WPARAM wParam, LPARAM lParam){
+
+	if( dragging ){
+
+		RECT eqLine{};
+		eqLine.left = pageMargin; eqLine.right = equationRect.right;
+		eqLine.top = currentLevel.top; eqLine.bottom = currentLevel.top + fontSize;
+
+		POINT mP;  // mP for moving point.
+		GetCursorPos(&mP);
+        ScreenToClient(handle, &mP);
+
+//  Is Mouse in equation level?
+		if( PtInRect(&eqLine, mP )){
+			X = static_cast<float>(mP.x);
+			// Snap to an IP and set indexLeft;  
+			glyphSelection();
+
+		} // if( PtInRect(&eqLine, mP )){
+	} // End if( dragging ){
+}
+
+//  Resets drag flag.
+//  If there is a drag, calls readTheDrag().
+void  Math::Eq_Edit::lButtonUp( WPARAM wParam, LPARAM lParam ){
+	
+	if( dragging ){
+		dragging = false;
+	//	dragLength = indexLeft - dragStart;
+		Win::log(L"lButtonUp dragStart = %i", dragStart );
+		Win::log(L"lButtonUp indexLeft = %i", indexLeft );
+		if( indexLeft != dragStart) readTheDrag();
+	}
 }
 
 void Math::Eq_Edit::wmSize( int w, int h){
 
 	HideCaret(handle);
-
 	if (pRT_){		
 		if(FAILED( pRT_->Resize(D2D1::SizeU(w, h)))){
 			DiscardDeviceResources();
-		//	log(L"FAILED( pRT_->Resize");
+			Win::log(L"FAILED( pRT_->Resize");
 			return; 
 		}
 	}
@@ -839,7 +1259,7 @@ void Math::Eq_Edit::wmSize( int w, int h){
 	cellHeight = 1.5f*cellWidth;
 
 	modelRect.left = glyphRect.right;	modelRect.right = clientWidth;
-	modelRect.top  = glyphRect.bottom;	modelRect.bottom = glyphRect.bottom;
+	modelRect.top  = 0;	modelRect.bottom = glyphRect.bottom;
 
 	equationRect.left = 0;	equationRect.right = clientWidth;
 	equationRect.top  = modelRect.bottom;	equationRect.bottom = clientHeight;
@@ -847,17 +1267,19 @@ void Math::Eq_Edit::wmSize( int w, int h){
 	groundLevel = 0.55*clientHeight;
 
 	currentLevel.top = groundLevel;
-	insertionPoint = lineEnd;
 	SetCaretPos( insertionPoint, currentLevel.top); 
 	ShowCaret(handle); 
 }
+
 void Math::Eq_Edit::wmSetFocus(){
 	CreateCaret(handle, NULL, 0, fontSize); 
-	SetCaretPos(insertionPoint, currentLevel.top); 
+ 	SetCaretPos(insertionPoint, currentLevel.top); 
 	ShowCaret(handle); 
 }
 
-void  Math::Eq_Edit::deleteGlyph(){
+/*
+void Math::Eq_Edit::moveCaret( bool left ){
+	Win::log(L"in moveCaret indexLeft = %i", indexLeft );
 
 	glyph = S[indexLeft].s;
 
@@ -866,9 +1288,39 @@ void  Math::Eq_Edit::deleteGlyph(){
 	else getGlyphMerics();
 
 	//   A|   Handle this case
-	if( charCount == 1 ){
-		charCount = 0;
+	if( charCount == 1 ){ 		
 		indexLeft = -1;
+		insertionPoint = pageMargin;
+		SetCaretPos( insertionPoint, currentLevel.top); 
+		return;
+	}
+
+	--indexLeft; 
+
+	if( indexLeft == -1 ) insertionPoint = pageMargin;
+	else insertionPoint -= glyphWidth;
+	SetCaretPos( insertionPoint, currentLevel.top);
+
+}
+*/
+
+
+//  Deletes a single glyph, the indexLeft = -1 case is delt with
+//  in wmChar.
+void  Math::Eq_Edit::deleteGlyph(){
+
+	Win::log(L"in deleteGlyph indexLeft = %i", indexLeft );
+
+
+	glyph = S[indexLeft].s;
+
+ 	if( glyph == 32 ) glyphWidth = 0.5f*fontSize;
+	    
+	else glyphWidth = getGlyphMetrics(glyph);
+
+	//   A|   Handle this case
+	if( charCount == 1 ){
+		charCount = 0;		indexLeft = -1;
 		insertionPoint = pageMargin;
 		S.resize(0);
 		return;
@@ -889,61 +1341,55 @@ void  Math::Eq_Edit::deleteGlyph(){
 	else insertionPoint -= glyphWidth;
 }
 
+//  Gets metrics for a single glyph and reads them into S[].
+//  Sets indexLeft, IP, charCount, S.size().
 void Math::Eq_Edit::setEqStringMetrics(WCHAR newGlyph){
+	Win::log(L"in setEqStringMetrics indexLeft = %i", indexLeft );
 
 	glyph = newGlyph;
 
  	if( glyph == 32 ){
 		glyphWidth = 0.5f*fontSize;
+	//	glyph = 8193;
 	}
-    
-	else getGlyphMerics();
+ 
+	else glyphWidth = getGlyphMetrics(glyph);
 	
-	//if( S[i].s == 32 ){
-	//	S[i].width = 0.5f*fontSize;
-	//}
- //
+//	? IP at the end line 
+	if( indexLeft == charCount - 1 ){ 
+		++charCount;                        
+		S.resize(charCount);       
+		S[charCount-1].s = glyph;            
+		S[charCount-1].w = glyphWidth;       
+		insertionPoint += glyphWidth;                    
+		S[charCount-1].x = insertionPoint;		    
+		++indexLeft;                                
+		return; 
+	} 
 
+//  Ip is "in" the line.
+	S.resize(charCount + 1); 
+		for( int i = charCount; i > indexLeft + 1 ; i--){
+			S[i].s = S[i-1].s;
+			S[i].w = S[i-1].w;
+			S[i].x = S[i-1].x + glyphWidth;
+		}
 
-// ? IP at the end line 
-   if( indexLeft == charCount - 1 ){ 
- //  if( indexLeft == charCount - 1 || charCount == 0 ){ 
-       ++charCount;                        
-       S.resize(charCount);       
-       S[charCount-1].s = glyph;            
-       S[charCount-1].w = glyphWidth;       
-       insertionPoint += glyphWidth;                    
-       S[charCount-1].x = insertionPoint;		    
-       ++indexLeft;                                
-       return; 
-   } 
+  ++indexLeft; ++charCount; 
 
-// Ip is "in" the line
-   // dont increment gCount until out of loop
-
-   S.resize(charCount + 1); 
-   for( int i = charCount; i > indexLeft + 1 ; i--){
-       S[i].s = S[i-1].s;
-       S[i].w = S[i-1].w;
-       S[i].x = S[i-1].x + glyphWidth;
-   }
-
-  ++indexLeft;; ++charCount; 
-
-  // Put that new glyph in the run
-   S[indexLeft].s = glyph;          
-   S[indexLeft].w = glyphWidth;
-   if( indexLeft == 0 ){
-	   S[indexLeft].x = pageMargin + glyphWidth;
-//	   insertionPoint = pageMargin;
-	   insertionPoint = S[indexLeft].x;
-
-   }
-
-   else{
+//  Put that new glyph in the run
+	S[indexLeft].s = glyph;          
+	S[indexLeft].w = glyphWidth;
+	if( indexLeft == 0 ){
+		S[indexLeft].x = pageMargin + glyphWidth;
+		insertionPoint = S[indexLeft].x;
+	}
+	else{
 		insertionPoint += glyphWidth;	   
 		S[indexLeft].x = S[indexLeft-1].x + glyphWidth;
-   }  
+	}
+
+   	Win::log(L"leaving setEqStringMetrics indexLeft = %i", indexLeft );
 }    
 
 
@@ -978,7 +1424,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
         }
         break;
+
     case WM_SIZE:
+		Win::log(L"case WM_SIZE: wParam = %i", wParam );
 	//	Win::log("in winProc rcvd WM_SIZE");
 	//  Windows will send this when we resize, max or min the window.
 	//	ViewDW will send this when changing the graphics mode or the OGL routine.
@@ -988,14 +1436,36 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		editor.wmSize(LOWORD(lParam), HIWORD(lParam));   
         break;
 
-	case WM_KEYDOWN:
+    case WM_PAINT:
 	{
+		Win::log(L"case WM_PAINT: wParam = %i", wParam );
+
+        PAINTSTRUCT ps;
+        HDC hdc = BeginPaint(hWnd, &ps);
+        // TODO: Add any drawing code that uses hdc here...
+		editor.draw_Eq();
+        EndPaint(hWnd, &ps);
+	}
+	break;
+	// ANY key press will sen this msg. not so for WM_CHAR
+	case WM_KEYDOWN:
+	{   
+
+		Win::log(L"case WM_KEYDOWN: wParam = %i", wParam );
 		editor.keyDown( wParam);
 		break;
 	}
+ 
+	// Mostly glyphs, space, backspace, 
+	case WM_KEYUP:
+	{
+	//	editor.keyDown( wParam);
+		break;
+	}
+
 	case WM_CHAR:
 	{
-
+		Win::log(L"case WM_CHAR: wParam = %i", wParam );
 
 		editor.wmChar( wParam);
 		break;
@@ -1024,24 +1494,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 		editor.lButtonDown( wParam, lParam);
     break;
+	case WM_MOUSEMOVE:
 
+		editor.mouseMove( wParam, lParam);
+    break;
 	case WM_LBUTTONUP:
 
 		editor.lButtonUp( wParam, lParam);
     break;
-    case WM_PAINT:
-        {
-            PAINTSTRUCT ps;
-            HDC hdc = BeginPaint(hWnd, &ps);
-            // TODO: Add any drawing code that uses hdc here...
-			editor.draw_Eq();
-            EndPaint(hWnd, &ps);
-        }
-        break;
-    case WM_DESTROY:
-		HideCaret(hWnd); 
-        DestroyCaret(); 
 
+    case WM_DESTROY:
+        DestroyCaret(); 
         PostQuitMessage(0);
 		editor.DiscardDeviceResources();
         break;

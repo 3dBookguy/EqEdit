@@ -1,0 +1,167 @@
+Eq_Edit flow chart
+
+Math::Eq_Edit editor;
+ Math::Eq_Edit::Eq_Edit(): //init data and Dwrite pointers
+
+int APIENTRY wWinMain
+ InitInstance (hInstance, nCmdShow)
+  HWND hWnd = CreateWindowW( ...
+  editor.init_DirectWrite(hWnd);
+  ShowWindow(hWnd, nCmdShow);
+  UpdateWindow(hWnd);
+
+
+
+void Math::Eq_Edit::init_DirectWrite(HWND hWnd){
+ // more settings init - move to constructor.
+ loadGlyphs();
+  WCHAR glyphs[10][25]{all the math glyphs here};
+ HRESULT hr = D2D1CreateFactory( .., &pD2DFactory_ );
+ pD2DFactory_->GetDesktopDpi(&dpiScaleX_, &dpiScaleY_);
+ hr = DWriteCreateFactory( ..., ..., ..&pDWriteFactory_)
+ hr = pDWriteFactory_->CreateTextFormat( 
+
+
+We are now in the Message Loop
+
+//We will receive WM_SIZE: First followed by WM_PAINT
+//Which makes sense, so we know how big to paint.
+case WM_SIZE:
+ void Math::Eq_Edit::wmSize( int w, int h){
+  HideCaret
+  pRT_->Resize(D2D1::SizeU(w, h)
+  Set all our boxes based on window size
+  SetCaretPos( insertionPoint, currentLevel.top); 
+  ShowCaret(handle); 
+
+case WM_PAINT:
+void Math::Eq_Edit::draw_Eq(){
+ CreateDeviceResources()
+  pD2DFactory_->CreateHwndRenderTarget( &pRT_ );
+  pRT_->CreateSolidColorBrush( color, &pMathBrush_ );
+  pRT_->CreateSolidColorBrush( color, &pPaperBrush_ );
+
+ pRT_->BeginDraw()
+ pRT_->FillRectangle(&paperRect, pPaperBrush_);
+ displayGlyphs();
+  pRT_->DrawTextLayout( glyphOrigin, pMathLayout_, pMathBrush_ );
+ displayIconicEquations();
+  // now is used to display the paste
+ for( int i = 0; i < charCount; i++ ){
+  pRT_->DrawTextLayout( origin , pMathLayout_, pMathBrush_ );  	
+ SetCaretPos(insertionPoint, currentLevel.top ); 
+   ? move to where insertionPoint, currentLevel.top are set
+ pRT_->DrawTextLayout( DIAGNOSTICS );
+ pRT_->DrawLine( point0, point1, pMathBrush_, 1.0f, NULL);
+
+
+case WM_LBUTTONDOWN:
+ void Math::Eq_Edit::lButtonDown( WPARAM wParam, LPARAM lParam ){
+  // ? Mouse in glyphBox
+   setEqStringMetrics( glyph );
+    glyph = space: glyphWidth = 0.5f*fontSize;
+    else getGlyphMerics();
+     pMathLayout_->GetMetrics( &metrics);
+     glyphWidth = metrics.width;
+     set charCount, S[i].s, S[i].w, S[i].x, S.resize, IP, iL
+     InvalidateRect(handle, NULL, FALSE);
+
+  // ? Mouse in modelBox
+    not impl.
+
+  // Is Mouse in equation level?    
+   dragging = true;
+   X = static_cast<float>(sP.x);
+   dragStart = glyphSelection();
+                 // Snaps the IP and indexLeft to the left or 
+                 // right side of a glyph.
+                 set ip, il
+	         SetCaretPos( insertionPoint, currentLevel.top);
+	         InvalidateRect(handle, NULL, FALSE);
+	         return indexLeft;
+
+case WM_MOUSEMOVE:
+ void Math::Eq_Edit::mouseMove(WPARAM wParam, LPARAM lParam){
+  if( dragging ){ 
+   // Is Mouse in equation level?
+    X = static_cast<float>(mP.x);
+     // Snap to an IP and set indexLeft;  
+     glyphSelection();
+      SetCaretPos( insertionPoint, currentLevel.top);
+      InvalidateRect(handle, NULL, FALSE);
+      return indexLeft;
+  }
+
+case WM_LBUTTONUP:
+//  Resets drag flag.
+//  If there is a drag, calls readTheDrag().
+void  Math::Eq_Edit::lButtonUp( WPARAM wParam, LPARAM lParam ){
+ if( dragging ){
+  dragging = false;
+  if( indexLeft != dragStart) readTheDrag();
+                               reads the drag into D
+  }
+ 
+void Math::Eq_Edit::keyDown( WPARAM wParam){
+ case VK_LEFT|| VK_RIGHT|| VK_HOME|| VK_END:
+  set insertionPoint, indexLeft
+  SetCaretPos( insertionPoint, currentLevel.top);
+  InvalidateRect(handle, NULL, FALSE);
+ case 'C' && CTRL
+  copyToClipboard();
+ case 'X' && CTRL
+  cutTheDrag();
+   // Remove the dragGlyphs and move the remaing glyphs.
+   // Reset charCount and S.size().
+   set insertionPoint, indexLeft
+   InvalidateRect(handle, NULL, FALSE);
+   
+ case 'X' && CTRL
+  pasteTheDrag();
+   // Make a hole for the paste
+   // Put the glyphs in the hole
+   set insertionPoint, indexLeft
+   InvalidateRect(handle, NULL, FALSE);
+
+//
+
+displayIconicEquations();
+
+
+modelBase.x
+subOf
+supOf
+numNumOf
+numOf
+numDenOf
+denNumOf
+denOf
+denDenOf
+
+draw model base
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
